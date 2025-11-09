@@ -3,6 +3,9 @@
 
 #include <QWidget>
 
+class LLMCaller;
+class MCPClient;
+
 class QTextEdit;
 class QLineEdit;
 
@@ -21,7 +24,12 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
 
 private slots:
+    //LLM
     void onSendMessage();
+    void onResponseReceived(const QString &response); // 处理从 LLMCaller 收到的成功响应
+    void onErrorOccurred(const QString &error);       // 处理从 LLMCaller 收到的错误
+
+
 
 private:
     void setupUI(); // 设置UI布局
@@ -33,6 +41,9 @@ private:
     // 拖动相关的成员变量
     QPoint m_dragPosition;
     bool m_isDragging = false;
+
+    LLMCaller *m_llmCaller;
+    MCPClient* m_mcpClient;
 };
 
 #endif // SIDEBARWINDOW_H

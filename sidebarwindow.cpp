@@ -9,6 +9,10 @@
 #include <QDebug>
 #include <QMessageBox>
 
+#include "llmcaller.h"
+#include "mcp_sse_client.h"
+
+
 SidebarWindow::SidebarWindow(QWidget *parent)
     : QWidget(parent)
 {
@@ -20,6 +24,14 @@ SidebarWindow::SidebarWindow(QWidget *parent)
     setStyleSheet("SidebarWindow { background-color: #FCCDD4; color: #FCCDD4; }");
 
     setupUI();
+
+    // 创建 LLMCaller 实例
+    m_llmCaller = new LLMCaller(this);
+
+    connect(m_llmCaller, &LLMCaller::responseReceived, this, &SidebarWindow::onResponseReceived);
+    connect(m_llmCaller, &LLMCaller::errorOccurred, this, &SidebarWindow::onErrorOccurred);
+
+
     moveToScreenSide();
 }
 
@@ -61,6 +73,57 @@ void SidebarWindow::setupUI()
     connect(sendButton, &QPushButton::clicked, this, &SidebarWindow::onSendMessage);
 
     setLayout(mainLayout);
+}
+
+void SidebarWindow::onSendMessage()
+{
+    QString userMessage = m_inputLine->text().trimmed();
+    if (userMessage.isEmpty()) {
+        return;
+    }
+
+    // 在显示区域显示用户的消息
+    m_displayArea->append(QString("<b style='color:#333;'>You:</b> %1").arg(userMessage));
+
+    // 显示一个“正在思考”的提示
+    m_displayArea->append("<b style='color:#888;'>AI:</b> ... (Thinking)");
+
+    // 清空输入框
+    m_inputLine->clear();
+
+    // 调用 LLMCaller 的方法来发送请求
+    m_llmCaller->callApi(userMessage);
+}
+
+void SidebarWindow::onResponseReceived(const QString &response)
+{
+
+    qDebug() << "=== Response Received ===";
+    qDebug() << "Full text:" << m_displayArea->toPlainText();
+    qDebug() << "Response:" << response;
+    // 移除 "Thinking..." 提示
+    // 我们可以移动光标到上一行末尾并选中整行来删除
+    QTextCursor cursor = m_displayArea->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+    cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+    cursor.removeSelectedText();
+
+    // 添加 AI 的真实回复
+    m_displayArea->append(QString("<b style='color:#0056b3;'>AI:</b> %1").arg(response));
+}
+
+void SidebarWindow::onErrorOccurred(const QString &error)
+{
+    // 同样，先移除 "Thinking..." 提示
+    QTextCursor cursor = m_displayArea->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+    cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+    cursor.removeSelectedText();
+
+    // 显示错误信息
+    m_displayArea->append(QString("<span style='color:red;'><b>Error:</b> %1</span>").arg(error));
 }
 
 void SidebarWindow::moveToScreenSide()
@@ -111,7 +174,8 @@ void SidebarWindow::mousePressEvent(QMouseEvent *event)
 
             if (reply == QMessageBox::Yes) {
                 qDebug() << "用户选择关闭窗口";
-                this->close();
+                QApplication::quit();
+                return;
             } else {
                 qDebug() << "用户取消关闭窗口";
                 // 这里可以添加取消关闭后的操作，或者什么都不做
@@ -148,15 +212,3 @@ void SidebarWindow::mouseReleaseEvent(QMouseEvent *event)
     event->accept();
 }
 
-// --- 消息发送功能 ---
-void SidebarWindow::onSendMessage()
-{
-    QString text = m_inputLine->text().trimmed();
-    if (!text.isEmpty()) {
-        m_displayArea->append("You: " + text);
-        m_inputLine->clear();
-        // 这里可以添加实际的发送逻辑，比如通过网络发送给AI
-        // 然后接收回复并显示
-        m_displayArea->append("AI: 收到你的消息 '" + text + "'");
-    }
-}
