@@ -1,4 +1,3 @@
-#include "mainwindow.h"
 #include "sidebarwindow.h"
 #include <QApplication>
 #include <QDebug>
@@ -13,6 +12,7 @@
 
 
 
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -23,6 +23,16 @@ int main(int argc, char *argv[])
 
     MCPClient client("http://192.168.40.131:9000"); // 桥接层地址
 
-    client.callAdd(5, 8);
+    // 获取所有工具
+    client.listTools([](QJsonObject result) {
+        if (result.contains("tools")) {
+            QJsonArray tools = result["tools"].toArray();
+            for (const QJsonValue& tool : tools) {
+                QJsonObject toolObj = tool.toObject();
+                qDebug() << "Tool:" << toolObj["name"].toString();
+                qDebug() << "Description:" << toolObj["description"].toString();
+            }
+        }
+    });
     return app.exec();
 }

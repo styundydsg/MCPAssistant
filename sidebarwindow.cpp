@@ -10,7 +10,7 @@
 #include <QMessageBox>
 
 #include "llmcaller.h"
-#include "mcp_sse_client.h"
+#include "mcpclient.h"
 
 
 SidebarWindow::SidebarWindow(QWidget *parent)
@@ -211,4 +211,3 @@ void SidebarWindow::mouseReleaseEvent(QMouseEvent *event)
     m_isDragging = false;
     event->accept();
 }
-
