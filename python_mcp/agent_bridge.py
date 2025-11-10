@@ -6,7 +6,7 @@ from fastmcp import Client
 # 连接到 MCP 服务
 MCP_URL = "http://127.0.0.1:8000/sse"
 
-client = openai.OpenAI(api_key="sk-1a9ba7651a09435db51c93d5b7157d7d", base_url="https://api.deepseek.com")
+client = openai.OpenAI(api_key="", base_url="https://api.deepseek.com")
 
 
 async def call_tool(tool_name, params):
